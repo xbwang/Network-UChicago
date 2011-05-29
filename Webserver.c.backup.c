@@ -46,7 +46,14 @@ main(int argc, char *argv[])
      ssock = accept(msock, (struct sockaddr *)&fsin, &alen);
      if (ssock < 0)
         error("accept failed: %s\n", strerror(errno));
-     (void) TCPdaytimed(ssock);
+     //(void) TCPdaytimed(ssock);
+		/*
+		while(read(slSock, buf, RECV_BUF_SIZE) > 0){
+			strcat(buffer, buf);
+			memset(buf, '\0', RECV_BUF_SIZE);
+		}
+		*/
+	(void) write(ssock, "haha", strlen("haha"));
      (void) close(ssock);
  }
 }

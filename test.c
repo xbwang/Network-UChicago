@@ -1,63 +1,94 @@
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
 #include <stdio.h>
-#include <sys/socket.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <string.h>
+#include <sys/sysinfo.h>
+#include <sys/statvfs.h>
 
-extern int	errno;
-
-int	test(const char *host, const char *service);
-int	error(const char *format, ...);
-int	connectTCP(const char *host, const char *service);
-
-#define	LINELEN		128
-
-/*------------------------------------------------------------------------
- * main - timecat arg parsing
- *------------------------------------------------------------------------
- */
-int
-main(int argc, char *argv[])
+int main()
 {
-	char	*host = "localhost";	/* host to use if none supplied	*/
-	char	*service = "daytime";	/* default service name		*/
-
-	switch (argc) {
-	case 1:
-		host = "localhost";
-		break;
-	case 3:
-		service = argv[2];
-		/* FALL THROUGH */
-	case 2:
-		host = argv[1];
-		break;
-	default:
-		fprintf(stderr, "usage: timecat [host [port]]\n");
-		exit(1);
-	}
-	test(host, service);
-	exit(0);
+	struct 	sysinfo sys_info;
+	
+	if(sysinfo(&sys_info) != 0)
+		printf("haha\n");
+		
+	printf("%f\n", (double)sys_info.loads[0]/65536.0); //avg within 1 min
+	printf("%f\n", (double)sys_info.loads[1]/65536.0); //avg within 5 mins
+	printf("%f\n", (double)sys_info.loads[2]/65536.0); //avg within 15 mins
 }
 
-/*------------------------------------------------------------------------
- * timecat  -- get time from remote host
- *------------------------------------------------------------------------
- */
-int
-test(const char *host, const char *service)
+/*
+int main(int argc, char *argv[])
 {
-	char	*buf;//[LINELEN+1];		/* buffer for one line of text	*/
-	int	s;//, n;			/* socket descriptor, read count*/
-
-	s = connectTCP(host, service);
-	buf = "GET /index.html HTTP/1.0 Connection: Keep-Alive User-Agent: Mozilla/2.02Gold (WinNT; I) Host: www.ora.com Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\r";
-	(void) write(s, buf, strlen(buf));
-	/*
-	while( (n = read(s, buf, LINELEN)) > 0) {
-          buf[n] = '\0';    
-	  (void) fputs (buf, stdout );
+	struct statvfs fiData;
+	char fnPath[128];
+	int perc, total, free, used;
+	
+	
+	strcpy(fnPath, argv[1]);
+	if((statvfs(fnPath, &fiData)) < 0){
+		printf("haha\n");
 	}
-	*/
+	total = (double)fiData.f_blocks*fiData.f_frsize/(1024*1024*1024)+0.5;
+	free = (double)fiData.f_bfree*fiData.f_bsize/(1024*1024*1024)+0.5;
+	used = (double)(fiData.f_blocks*fiData.f_frsize - fiData.f_bfree*fiData.f_bsize)/(1024*1024*1024)+0.5;
+	perc = ((double)used/total+0.005)*100;
+	
+	printf("disk total: %uG\n", total);
+	printf("disk free: %uG\n", free);
+	printf("disk used: %uG\n", used);
+	printf("disk used: %u%\n", perc);			
+	return 0;
+	
+}
+*/
+/*
+int
+main()
+{
+	int days, hours, mins;
+	struct sysinfo sys_info;
+	
+	if(sysinfo(&sys_info) != 0)
+		perror("sysinfo");
+	days = sys_info.uptime / 86400;
+	hours = (sys_info.uptime/3600) - (days*24);
+	mins = (sys_info.uptime/60) - (days*1440) -(hours*60);
+
+	printf("%d days, %d hours, %d minutes, %d seconds\n", days, hours, mins, sys_info.uptime % 60);
+
 	return 0;
 }
+*/
+
+/*
+char *parse(char *buf, int len)
+{
+	int i, j, n;
+	char *file;
+	
+	for(i = 0; i < len; i++){
+		if(buf[i] == ' '){
+			for(j = i+1; j < len; j++){
+				if(buf[j] == ' '){
+					break;
+				}
+			}
+			file = (char *)malloc(sizeof(char)*(j-i-1));
+			strncpy(file, &buf[i+1], j-i-1);
+			break;
+		}
+	}
+	
+	return file;
+}
+
+int main()
+{
+	char *buffer = "GET ./index.html HTTP/1.0";
+	char *rst = parse(buffer, strlen(buffer));
+	printf("%s\n", rst);
+	
+	return 0;
+}
+*/

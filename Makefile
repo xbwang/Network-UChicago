@@ -2,7 +2,7 @@
 # Simple web server project
 #	
 
-all: Webserver test
+all: Webserver Send
 
 DEFS =
 CFLAGS = -g -Wall
@@ -19,11 +19,11 @@ SOBJ = passiveTCP.o passiveUDP.o passivesock.o
 libtcp.a: $(OBJ) $(SOBJ)
 	$(AR) -r $@ $(OBJ) $(SOBJ)
  
-test: libtcp.a test.o
+Send: libtcp.a Send.o
 		$(CC) -o $@ $(CFLAGS) $@.o libtcp.a -lnsl
 
 Webserver: libtcp.a Webserver.o
 	$(CC) -o $@ $(CFLAGS) $@.o libtcp.a -lnsl 
 
 clean: 
-	rm -f a.out core test Webserver *.o *.a *~
+	rm -f a.out core Send Webserver *.o *.a *~
