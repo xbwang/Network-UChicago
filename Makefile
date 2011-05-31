@@ -2,18 +2,18 @@
 # Simple web server project
 #	
 
-all: Webserver Send
+all: Webserver
 
 DEFS =
 CFLAGS = -g -Wall
 
 # Client Objects 
 
-OBJ = connectTCP.o connectUDP.o connectsock.o error.o connectHTTP.o 
+OBJ = connectsock.o error.o
 
 # Sever Objects
 
-SOBJ = passiveTCP.o passiveUDP.o passivesock.o
+SOBJ = passivesock.o 
 
 
 libtcp.a: $(OBJ) $(SOBJ)
@@ -26,4 +26,4 @@ Webserver: libtcp.a Webserver.o
 	$(CC) -o $@ $(CFLAGS) $@.o libtcp.a -lnsl 
 
 clean: 
-	rm -f a.out core Send Webserver *.o *.a *~
+	rm -f a.out core Webserver *.o *.a *~

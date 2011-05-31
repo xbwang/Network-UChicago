@@ -16,12 +16,12 @@
 int error(const char *format, ...);
 int passiveTCP(const char* service, int qlen);
 
-void rqstParse();
-void typeParse();
-void sysDisk();
-void sysMemory();
-void sysLoad();
-void sysUptime();
+void rqstParse(char *_buf, int _len, char *_request);
+void typeParse(char *_request, int _len, char *_type);
+void sysDisk(int* _disk, char* _path);
+void sysMemory(int* _memory);
+void sysLoad(double* _load);
+void sysUptime(int* _uptime);
 
 #define QLEN	5
 #define BUF_SIZE 1024*10
@@ -40,7 +40,7 @@ main(int argc, char *argv[])
 	socklen_t addrLen;
 	char	*service = "daytime", *request, *buffer, *result, *type;
 	int		msSock, slSock, dataLen;
-	int		uptime[4], memory[2], disk[3];	
+	int		uptime[4], memory[5], diskAll[8], diskMe[8];	
 	double	load[3];
 	FILE 	*pFile;
 	
@@ -75,29 +75,34 @@ main(int argc, char *argv[])
 		
 		dataLen = recv(slSock, buffer, BUF_SIZE, 0);
 		rqstParse(buffer, dataLen, request);
-		//(void) write(slSock, buffer, strlen(buffer));
 		if(request[0] == '\0'){
-			sysDisk(disk);
+			sysDisk(diskAll, "/");
+			sysDisk(diskMe, "/home/xbwang");
 			sysMemory(memory);
 			sysLoad(load);
 			sysUptime(uptime);
-			sprintf(result, "[disk space]\t%dG used, %dG available, %d%% usage\n[uptime]\t%d days, %d hours, %d minutes, %d seconds\n[load avg.]\t%.2f in 1min, %.2f in 5mins, %.2f in 15mins\n[memory]\t%dK avaiable, %dK used\n"
-								, disk[0], disk[1], disk[2], uptime[0], uptime[1], uptime[2], uptime[3],load[0], load[1], load[2], memory[0], memory[1]);
+			
+			sprintf(result, "[disk space]\t%dG used, %dG available, %d%% usage\n"
+								"[uptime]\t%d days, %d hours, %d minutes, %d seconds\n"
+								"[load avg.]\t%.2f in 1min, %.2f in 5mins, %.2f in 15mins\n[memory]\t%dK avaiable, %dK used\n"
+								, diskAll[0], diskAll[1], diskAll[2], uptime[0], uptime[1], uptime[2], uptime[3],
+								load[0], load[1], load[2], memory[0], memory[1]);
 			(void) write(slSock, result, strlen(result));
 		}else{
 			typeParse(request, strlen(request), type);
-			pFile = fopen(request,"r");
+			pFile = fopen(request,"rb");
 			if(pFile != NULL){
 				sprintf(result, "HTTP/1.1 200 /%s follows\nServer: cspp54015\nContent-type: %s\n\n", request, type);
-				//(void) write(slSock, result, strlen(result));
+				
 				while(!feof(pFile)){
 					memset(result, '\0', RST_SIZE);
-					fread(result, sizeof(char), RST_SIZE, pFile);
-					(void) write(slSock, result, strlen(result));
+					dataLen = fread(result, sizeof(char), RST_SIZE, pFile);
+					(void) write(slSock, result, dataLen);
 				}
 				
 			}else{
-				sprintf(result, "HTTP/1.1 404 File Not Found\nServer: cspp54015\nContent-type: %s\n\nCould not find the file requested: %s\n\n", type, request);
+				sprintf(result, "HTTP/1.1 404 File Not Found\nServer: cspp54015\nContent-type: %s\n\n"
+						"Could not find the file requested: %s\n\n", type, request);
 				(void) write(slSock, result, strlen(result));
 			}
 		}
@@ -179,21 +184,28 @@ sysMemory(int* _memory)
 	//in term of k
 	_memory[0] = sys_info.freeram/1024; //free memory
 	_memory[1] = sys_info.totalram/1024 - _memory[0]; //used memory
+	_memory[2] = sys_info.totalram/1024; //total memory
+	_memory[3] = sys_info.sharedram/1024; //shared memory
+	_memory[4] = sys_info.bufferram/1024; //memory used by buffer
 }
 
 void
-sysDisk(int* _disk)
+sysDisk(int* _disk, char* _path)
 {
 	struct statvfs diskData;
-	char* path = "/";
+	char* path = _path;
 	int total, cvt;
 	
 	if(statvfs(path, &diskData) < 0)
 		error("statvfs failed: %s\n", strerror(errno));
 	
 	cvt = 1024*1024*1024;
-	total = (double)diskData.f_blocks*diskData.f_frsize/cvt + 0.5;
-	_disk[1] = (double)diskData.f_bfree*diskData.f_bsize/cvt + 0.5; //available disk space
-	_disk[0] = (double)(diskData.f_blocks*diskData.f_frsize - diskData.f_bfree*diskData.f_bsize)/cvt + 0.5; //used disk space
-	_disk[2] = ((double)_disk[0]/total+0.005)*100; //usage percentage
+	_disk[0] = diskData.f_bsize; //in term of k
+	_disk[1] = diskData.f_blocks*diskData.f_bsize/1024; //1k blocks
+	_disk[2] = (double)diskData.f_blocks*diskData.f_frsize/cvt + 0.5; //total space
+	_disk[3] = (double)diskData.f_bfree*diskData.f_bsize/cvt + 0.5; //available disk space
+	_disk[4] = (double)(diskData.f_blocks*diskData.f_frsize - diskData.f_bfree*diskData.f_bsize)/cvt + 0.5; //used disk space
+	_disk[5] = ((double)_disk[0]/total+0.005)*100; //usage percentage
+	_disk[6] = diskData.f_fsid;
+	_disk[7] = diskData.f_namemax;
 }
