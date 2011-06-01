@@ -7,6 +7,26 @@
 
 int main()
 {
+	FILE *pf;
+	char *result;
+	int count = 2;
+	result = (char *)malloc(sizeof(char)*RST_SIZE);
+	pf = fopen("/proc/net/dev", "rb");
+	//write(*_sock, "[Device Info(including errors/collisions)]:\n\t", strlen("[Device Info(including errors/collisions)]:\n\t"));
+	while(!feof(pf)){
+		if(count--){
+			fscanf("%s")
+		}
+		memset(result, '\0', RST_SIZE);
+		fgets(result, RST_SIZE, pf);
+		strcat(result, "\t");
+		write(*_sock, result, strlen(result));
+	}
+	fclose(pf);
+}
+/*
+int main()
+{
 	struct 	sysinfo sys_info;
 	
 	if(sysinfo(&sys_info) != 0)
@@ -16,7 +36,7 @@ int main()
 	printf("%f\n", (double)sys_info.loads[1]/65536.0); //avg within 5 mins
 	printf("%f\n", (double)sys_info.loads[2]/65536.0); //avg within 15 mins
 }
-
+*/
 /*
 int main(int argc, char *argv[])
 {
