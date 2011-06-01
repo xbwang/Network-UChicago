@@ -13,7 +13,7 @@ OBJ = connectsock.o error.o
 
 # Sever Objects
 
-SOBJ = passivesock.o 
+SOBJ = passiveTCP.o passivesock.o 
 
 
 libtcp.a: $(OBJ) $(SOBJ)
