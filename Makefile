@@ -13,14 +13,11 @@ OBJ = connectsock.o error.o
 
 # Sever Objects
 
-SOBJ = passiveTCP.o passivesock.o 
+SOBJ = passiveTCP.o passivesock.o
 
 
 libtcp.a: $(OBJ) $(SOBJ)
 	$(AR) -r $@ $(OBJ) $(SOBJ)
- 
-Send: libtcp.a Send.o
-		$(CC) -o $@ $(CFLAGS) $@.o libtcp.a -lnsl
 
 Webserver: libtcp.a Webserver.o
 	$(CC) -o $@ $(CFLAGS) $@.o libtcp.a -lnsl 
